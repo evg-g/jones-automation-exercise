@@ -1,15 +1,28 @@
 {
   "name": "jones-exercise",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
+  "description": "Playwright automation of the Request a call back form (Jones exercise)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.64.0",
-    "@types/node": "^26.6.5"
+    "@types/node": "^26.6.5",
+    "dotenv": "^16.6.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.12.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
   }
 }

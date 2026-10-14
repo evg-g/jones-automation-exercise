@@ -17,6 +17,8 @@ The answers to the questions about the billing form are in [ANSWERS.md](ANSWERS.
    - the "Thank You!" heading is visible
 7. Writes `Reached the Thank You page` to the console
 
+A second test types `example.com` (no `https://`) in Website and checks that the form is blocked.
+
 ## Requirements
 
 - Node.js 20 or newer
@@ -37,30 +39,58 @@ npx playwright install --with-deps chromium
 ## Run
 
 ```bash
-npx playwright test             # run the test
-npx playwright test --headed    # run and see the browser
-npx playwright show-report      # open the HTML report
+npm test               # run the tests
+npm run test:headed    # run and see the browser
+npm run report         # open the HTML report
+npm run lint           # check code quality (ESLint)
+npm run format         # format the code (Prettier)
+```
+
+Run against another site address: copy `.env.example` to `.env` and change `BASE_URL`, or set it in the shell:
+
+```bash
+BASE_URL=https://other.site npm test
 ```
 
 The output should include:
 
 ```
 Reached the Thank You page
-  1 passed
+  2 passed
 ```
 
 ## Project structure
 
+The project uses the Page Object Model (POM). Each layer has one job:
+
 ```
-tests/request-callback.spec.js   the test
-playwright.config.js             Playwright settings (Chromium only)
+config/env.js                    site URL (BASE_URL from .env or the shell, with a default)
+pages/BasePage.js                actions shared by all pages (open, screenshot)
+pages/CallBackPage.js            form locators and actions (fillForm, selectNumberOfEmployees, submit)
+pages/ThankYouPage.js            Thank You page locators and checks
+test-data/callBackData.js        test data (form values, employee ranges, screenshot path)
+fixtures/pages.js                gives tests ready page objects (callBackPage, thankYouPage)
+tests/request-callback.spec.js   the test: only the steps, no selectors or data
+playwright.config.js             Playwright settings (baseURL, Chromium only)
+eslint.config.js                 ESLint rules (with the Playwright plugin)
+.prettierrc.json                 Prettier code style
+.env.example                     environment variables you can set (BASE_URL)
+.github/workflows/playwright.yml CI: runs lint and tests on GitHub on each push and pull request
 screenshots/                     the screenshot taken before the click
 ```
+
+To add a new page: create a class in `pages/` that extends `BasePage`, then add it to `fixtures/pages.js`.
 
 ## Notes about my choices
 
 - **JavaScript**, because the exercise talks about JavaScript.
 - **Playwright Test runner** (`@playwright/test`) and not a plain script with the Playwright library. The runner gives `expect` checks that wait and retry, a clear test structure and an HTML report. It is the standard way to use Playwright today.
+- **Page Object Model.** Selectors live only in the page classes, data only in `test-data/`, and the URL only in `config/`. If the site changes, only one place needs a fix, and the test stays readable.
+- **Custom fixtures** create the page objects, so each test gets them as parameters.
+- **ESLint + Prettier** keep the code clean and in one style. CI fails if they find a problem.
+- **GitHub Actions CI** runs the checks and the test on every push and pull request, and saves the HTML report.
+- **`test.step`** splits the test into named steps that show in the report.
+- **A second, negative test.** It types `example.com` (no `https://`) in Website and checks that the browser blocks the form. A real project checks what must fail, not only the happy path.
 - **Screenshot after the bonus step.** The exercise asks for a screenshot before clicking the button. I take it after all fields are filled and 51-500 is selected, right before the click, so the screenshot shows the full form as it is sent.
 - **The console message is printed only after the checks pass.** If the Thank You page does not open, the test fails and nothing is printed.
 - **Test data is fake** (`test@example.com`, `000-0000000`, `https://example.com`), because this is a live form.
@@ -73,6 +103,7 @@ While working on the test I noticed a few problems on the site. I checked each o
 ### 1. The form data is not saved, so the lead is lost
 
 **Steps:**
+
 1. Open https://test.netlify.app/ with DevTools open on the Network tab ("Preserve log" on, filter "All").
 2. Fill the form and click "Request a call back".
 
@@ -83,12 +114,13 @@ While working on the test I noticed a few problems on the site. I checked each o
 **Suggested fix:** Send the form to a backend that saves it. For a site hosted on Netlify, Netlify Forms can do this:
 
 ```html
-<form name="call-back" method="POST" data-netlify="true" action="/thank-you.html">
+<form name="call-back" method="POST" data-netlify="true" action="/thank-you.html"></form>
 ```
 
 ### 2. Personal details are sent in the URL
 
 **Steps:**
+
 1. Fill the form and click "Request a call back".
 2. Look at the address bar on the Thank You page.
 
@@ -101,12 +133,13 @@ This means they can be saved in the browser history and in server and CDN logs.
 **Suggested fix:** Use POST (the same change as in item 1):
 
 ```html
-<form ... method="POST">
+<form ... method="POST"></form>
 ```
 
 ### 3. The Phone field accepts letters
 
 **Steps:**
+
 1. Fill all fields with valid data, but type `abc` in Phone.
 2. Click "Request a call back".
 
@@ -117,13 +150,21 @@ This means they can be saved in the browser history and in server and CDN logs.
 **Suggested fix:**
 
 ```html
-<input id="phone" type="tel" name="phone" required
-       pattern="\+?[0-9][0-9 \-]{6,19}" placeholder="Your phone number" class="input">
+<input
+  id="phone"
+  type="tel"
+  name="phone"
+  required
+  pattern="\+?[0-9][0-9 \-]{6,19}"
+  placeholder="Your phone number"
+  class="input"
+/>
 ```
 
 ### 4. The Website placeholder shows a format that the field rejects
 
 **Steps:**
+
 1. Fill all required fields.
 2. Type `example.com` in Website, exactly like the placeholder shows.
 3. Click "Request a call back".
@@ -135,12 +176,13 @@ This means they can be saved in the browser history and in server and CDN logs.
 **Suggested fix:** Show the right format in the placeholder:
 
 ```html
-<input id="website" type="url" name="website" placeholder="https://example.com" class="input">
+<input id="website" type="url" name="website" placeholder="https://example.com" class="input" />
 ```
 
 ### 5. The font is blocked (mixed content)
 
 **Steps:**
+
 1. Open https://test.netlify.app/ with DevTools open on the Console tab.
 
 **Expected:** No errors in the console. The Open Sans font is loaded.
@@ -150,5 +192,9 @@ This means they can be saved in the browser history and in server and CDN logs.
 **Suggested fix:** Load the font over HTTPS:
 
 ```html
-<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
+<link
+  href="https://fonts.googleapis.com/css?family=Open+Sans:400,700,600,300,800"
+  rel="stylesheet"
+  type="text/css"
+/>
 ```

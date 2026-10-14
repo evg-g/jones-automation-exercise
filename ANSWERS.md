@@ -38,18 +38,21 @@ The screen is a mock-up, so I split my answer to (a) into two parts: problems I 
 ## b. Sample test cases
 
 **TC-01: Successful payment**
+
 - Preconditions: Test environment, payment screen open.
 - Steps: Fill all required fields with valid data (test card 4111111111111111, future expiration date). Click Continue.
 - Expected: Payment approved. Confirmation shows the amount and only the last 4 digits. Card charged once.
 - Automation: Yes, main flow.
 
 **TC-02: Expired card is rejected**
+
 - Preconditions: Test environment, payment screen open.
 - Steps: Fill all fields with valid data, but choose an expiration date in the past. Click Continue.
 - Expected: Payment not sent. Clear error next to Expiration. Other fields keep their data.
 - Automation: Yes, simple validation check.
 
 **TC-03: Double click on Continue**
+
 - Preconditions: Test environment, payment screen open.
 - Steps: Fill all fields with valid data. Click Continue twice quickly.
 - Expected: Button disabled after the first click. Only one payment created.
@@ -60,6 +63,7 @@ The screen is a mock-up, so I split my answer to (a) into two parts: problems I 
 **The bug:** The form is built for US customers. No Country field, and State and Postal Code are required. A global company loses customers who simply can't pay.
 
 **Solution:**
+
 1. Add a Country field, filled automatically when possible.
 2. Show the address fields based on the country: State only where it exists, Postal Code optional where there is none, and the right format for each country.
 3. Show the currency next to the amount.
