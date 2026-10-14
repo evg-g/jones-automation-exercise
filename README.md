@@ -21,7 +21,7 @@ A second test types `example.com` (no `https://`) in Website and checks that the
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22 or newer (active LTS)
 
 ## Install
 
